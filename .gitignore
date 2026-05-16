@@ -3,3 +3,6 @@ Thumbs.db
 *.log
 .claude/
 uploads/
+.env
+.env.local
+.env*.local
