@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DIONE · Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── Admin shell ── */
+    .adm { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .adm-side {
+      width: 220px; flex-shrink: 0;
+      background: var(--ink); color: var(--whisper);
+      display: flex; flex-direction: column;
+      padding: 0; position: sticky; top: 0; height: 100vh;
+    }
+    .adm-logo {
+      padding: 28px 24px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      font-family: var(--display); font-size: 22px; letter-spacing: 0.28em;
+    }
+    .adm-logo span { display: block; font-family: var(--body); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-top: 4px; }
+    .adm-nav { flex: 1; padding: 16px 0; }
+    .adm-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 24px; cursor: pointer;
+      font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+      transition: background .2s, color .2s;
+      border-left: 2px solid transparent;
+    }
+    .adm-nav-item:hover { background: rgba(255,255,255,0.06); color: var(--whisper); }
+    .adm-nav-item.active { background: rgba(255,255,255,0.1); color: var(--whisper); border-left-color: var(--bronze); }
+
+    /* Main area */
+    .adm-main { flex: 1; background: var(--whisper); overflow-y: auto; }
+    .adm-topbar {
+      background: var(--cream); border-bottom: 1px solid var(--line);
+      padding: 18px 36px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .adm-content { padding: 36px; }
+
+    /* Page title */
+    .adm-page-title { font-family: var(--display); font-size: 42px; margin: 0 0 6px; line-height: 1; }
+    .adm-page-sub { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft); }
+
+    /* Cards / metrics */
+    .adm-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 36px; }
+    .adm-metric {
+      background: var(--cream); border: 1px solid var(--line); padding: 20px 22px;
+    }
+    .adm-metric__label { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-soft); }
+    .adm-metric__value { font-family: var(--display); font-size: 32px; margin-top: 6px; color: var(--bronze-deep); }
+    .adm-metric__sub { font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
+
+    /* Table */
+    .adm-table-wrap { background: var(--cream); border: 1px solid var(--line); overflow: hidden; }
+    .adm-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .adm-table th {
+      text-align: left; padding: 12px 16px;
+      font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft);
+      background: var(--bone); border-bottom: 1px solid var(--line);
+      font-weight: 500;
+    }
+    .adm-table td { padding: 13px 16px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+    .adm-table tr:last-child td { border-bottom: 0; }
+    .adm-table tr:hover td { background: rgba(160,115,70,0.04); }
+
+    /* Badges */
+    .badge {
+      display: inline-block; padding: 3px 9px;
+      font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500;
+    }
+    .badge--ok  { background: #d4edda; color: #155724; }
+    .badge--low { background: #fff3cd; color: #856404; }
+    .badge--out { background: #f8d7da; color: #721c24; }
+
+    /* Forms */
+    .adm-form { display: flex; flex-direction: column; gap: 16px; }
+    .adm-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .adm-field { display: flex; flex-direction: column; gap: 6px; }
+    .adm-field label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+    .adm-input {
+      height: 42px; padding: 0 14px;
+      background: var(--whisper); border: 1px solid var(--line);
+      font-family: var(--body); font-size: 13.5px; color: var(--ink);
+      outline: none; border-radius: 0; width: 100%; box-sizing: border-box;
+      transition: border-color .2s;
+    }
+    .adm-input:focus { border-color: var(--bronze); }
+    select.adm-input { cursor: pointer; }
+    textarea.adm-input { height: auto; padding: 10px 14px; resize: vertical; }
+
+    /* Panel / modal */
+    .adm-panel {
+      background: var(--cream); border: 1px solid var(--line); padding: 28px; margin-bottom: 28px;
+    }
+    .adm-panel-title { font-family: var(--display); font-size: 24px; margin: 0 0 20px; }
+
+    /* Section header row */
+    .adm-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+
+    /* Action buttons */
+    .adm-btn { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 18px; font-family: var(--body); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 500; cursor: pointer; border: 1px solid var(--ink); background: var(--ink); color: var(--whisper); transition: background .2s; border-radius: 0; }
+    .adm-btn:hover { background: var(--bronze-deep); border-color: var(--bronze-deep); }
+    .adm-btn--ghost { background: transparent; color: var(--ink); }
+    .adm-btn--ghost:hover { background: var(--ink); color: var(--whisper); }
+    .adm-btn--danger { background: #c0392b; border-color: #c0392b; }
+    .adm-btn--danger:hover { background: #96281b; border-color: #96281b; }
+    .adm-btn--sm { height: 30px; padding: 0 12px; font-size: 10px; }
+    .adm-btn--bronze { background: var(--bronze); border-color: var(--bronze); }
+    .adm-btn--bronze:hover { background: var(--bronze-deep); border-color: var(--bronze-deep); }
+
+    /* Qty stepper */
+    .qty-stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); }
+    .qty-stepper button { width: 30px; height: 30px; background: transparent; border: 0; cursor: pointer; font-size: 16px; color: var(--ink); }
+    .qty-stepper span { min-width: 34px; text-align: center; font-family: var(--display); font-size: 16px; }
+
+    /* Toast */
+    .adm-toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--ink); color: var(--whisper);
+      padding: 12px 22px; font-size: 11.5px; letter-spacing: 0.18em; text-transform: uppercase;
+      z-index: 999; animation: fadeUp .3s ease;
+      box-shadow: 0 12px 32px rgba(42,33,24,0.25);
+    }
+
+    /* Tab bar */
+    .adm-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); margin-bottom: 28px; }
+    .adm-tab { padding: 10px 20px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; border-bottom: 2px solid transparent; color: var(--ink-soft); transition: color .2s; }
+    .adm-tab.active { color: var(--ink); border-bottom-color: var(--bronze); }
+
+    /* Responsive */
+    @media (max-width: 700px) {
+      .adm { flex-direction: column; }
+      .adm-side { width: 100%; height: auto; position: static; }
+      .adm-nav { display: flex; flex-direction: row; overflow-x: auto; padding: 0; }
+      .adm-nav-item { white-space: nowrap; border-left: none; border-bottom: 2px solid transparent; }
+      .adm-nav-item.active { border-left-color: transparent; border-bottom-color: var(--bronze); }
+      .adm-content { padding: 20px; }
+      .adm-form-row { grid-template-columns: 1fr; }
+      .adm-metrics { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body style="font-family: Outfit; background: var(--whisper);">
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script type="text/babel" src="admin.jsx"></script>
+</body>
+</html>

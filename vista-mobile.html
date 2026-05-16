@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DIONE — Vista mobile</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #F0E6D6; font-family: ui-sans-serif, system-ui, sans-serif; min-height: 100vh; }
+    * { box-sizing: border-box; }
+
+    .page { padding: 48px 24px 80px; max-width: 1280px; margin: 0 auto; }
+
+    .head { text-align: center; margin-bottom: 40px; }
+    .eyebrow {
+      font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase;
+      color: #7A5530; font-weight: 500;
+    }
+    h1 {
+      font-family: "Cormorant Garamond", "Garamond", serif;
+      font-weight: 400; font-size: 56px; line-height: 1; margin: 12px 0 10px;
+      color: #2A2118;
+    }
+    h1 i { color: #7A5530; }
+    .head p { color: #5A4A3A; margin: 0; font-size: 14px; max-width: 480px; margin: 0 auto; }
+
+    .controls {
+      display: flex; gap: 8px; justify-content: center; margin: 28px 0 36px;
+      flex-wrap: wrap;
+    }
+    .ctrl {
+      background: transparent; color: #2A2118;
+      border: 1px solid rgba(42,33,24,0.18);
+      padding: 10px 18px;
+      font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+      cursor: pointer; font-family: inherit; font-weight: 500;
+    }
+    .ctrl.active { background: #2A2118; color: #FAF6EE; border-color: #2A2118; }
+    .ctrl:hover:not(.active) { background: rgba(42,33,24,0.05); }
+
+    .stage {
+      display: grid;
+      grid-template-columns: auto;
+      justify-content: center;
+      gap: 32px;
+    }
+
+    /* iPhone frame */
+    .phone {
+      width: 402px;
+      height: 874px;
+      border-radius: 48px;
+      background: #1a1a1a;
+      padding: 12px;
+      box-shadow:
+        0 60px 100px -20px rgba(42,33,24,0.35),
+        0 30px 60px -30px rgba(42,33,24,0.4),
+        0 0 0 2px rgba(0,0,0,0.08);
+      position: relative;
+      overflow: hidden;
+    }
+    .phone::before {
+      /* dynamic island */
+      content: "";
+      position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+      width: 126px; height: 37px; border-radius: 24px;
+      background: #000; z-index: 5;
+    }
+    .phone iframe {
+      width: 100%; height: 100%;
+      border: 0;
+      border-radius: 36px;
+      background: #F0E6D6;
+      display: block;
+    }
+    .phone-label {
+      position: absolute;
+      left: 50%; bottom: 14px; transform: translateX(-50%);
+      width: 139px; height: 5px; border-radius: 100px;
+      background: rgba(255,255,255,0.5);
+      z-index: 5; pointer-events: none;
+    }
+
+    /* iPhone smaller variant (SE-ish) */
+    .phone.small {
+      width: 340px; height: 720px;
+    }
+
+    /* Device caption */
+    .device-wrap {
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+    }
+    .device-name {
+      font-family: "Cormorant Garamond", serif;
+      font-style: italic; font-size: 18px;
+      color: #5A4A3A;
+    }
+    .device-size {
+      font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+      color: #7A5530;
+    }
+
+    /* Side by side */
+    .stage.compare {
+      grid-template-columns: auto auto;
+      justify-content: center;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .stage.compare {
+        grid-template-columns: auto;
+      }
+      .phone { width: 320px; height: 692px; padding: 10px; }
+      .phone::before { width: 100px; height: 28px; top: 18px; }
+      .phone iframe { border-radius: 30px; }
+      h1 { font-size: 36px; }
+    }
+
+    .footer {
+      text-align: center; margin-top: 56px;
+      font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+      color: #7A5530;
+    }
+    .footer a {
+      color: #2A2118; text-decoration: none;
+      border-bottom: 1px solid #2A2118; padding-bottom: 2px;
+    }
+
+    /* Meander divider */
+    .meander {
+      height: 14px;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='42' height='14' viewBox='0 0 42 14'><path d='M0 12 H10 V4 H30 V12 H42' fill='none' stroke='%232A2118' stroke-opacity='0.4' stroke-width='0.8'/></svg>");
+      background-repeat: repeat-x;
+      background-position: center;
+      opacity: 0.6;
+      margin: 24px auto;
+      max-width: 600px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="head">
+      <div class="eyebrow">Vista previa · MMXXVI</div>
+      <h1>DIONE en <i>tu mano</i></h1>
+      <p>Así se ve el sitio en un iPhone. Puedes hacer scroll dentro del marco e interactuar (filtros, vista rápida, carrito) — funciona igual que en un teléfono real.</p>
+      <div class="meander"></div>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl active" data-view="single">iPhone 16</button>
+      <button class="ctrl" data-view="compare">Comparar tamaños</button>
+      <button class="ctrl" data-view="desktop">Ver versión desktop</button>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="device-wrap">
+        <div class="phone">
+          <iframe src="index.html" title="DIONE Mobile"></iframe>
+          <div class="phone-label"></div>
+        </div>
+        <div class="device-name">iPhone 16</div>
+        <div class="device-size">402 × 874 px</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Hecho por DIONE Atelier · <a href="index.html">Abrir el sitio en pantalla completa →</a>
+    </div>
+  </div>
+
+  <script>
+    const stage = document.getElementById("stage");
+    const ctrls = document.querySelectorAll(".ctrl");
+
+    const views = {
+      single: `
+        <div class="device-wrap">
+          <div class="phone">
+            <iframe src="index.html" title="DIONE Mobile"></iframe>
+            <div class="phone-label"></div>
+          </div>
+          <div class="device-name">iPhone 16</div>
+          <div class="device-size">402 × 874 px</div>
+        </div>`,
+      compare: `
+        <div class="device-wrap">
+          <div class="phone small">
+            <iframe src="index.html" title="DIONE Mobile SE"></iframe>
+            <div class="phone-label"></div>
+          </div>
+          <div class="device-name">iPhone SE</div>
+          <div class="device-size">340 × 720 px</div>
+        </div>
+        <div class="device-wrap">
+          <div class="phone">
+            <iframe src="index.html" title="DIONE Mobile Pro"></iframe>
+            <div class="phone-label"></div>
+          </div>
+          <div class="device-name">iPhone 16 Pro Max</div>
+          <div class="device-size">402 × 874 px</div>
+        </div>`,
+      desktop: `
+        <div style="width: 100%; max-width: 1200px;">
+          <div style="background: #1a1a1a; border-radius: 12px 12px 0 0; padding: 10px 16px; display: flex; gap: 8px; align-items: center;">
+            <span style="width:12px; height:12px; border-radius:50%; background:#ff5f57;"></span>
+            <span style="width:12px; height:12px; border-radius:50%; background:#ffbd2e;"></span>
+            <span style="width:12px; height:12px; border-radius:50%; background:#28ca42;"></span>
+            <span style="margin-left:16px; color:rgba(255,255,255,0.5); font-size:11px; font-family:ui-monospace,monospace;">dione.atelier</span>
+          </div>
+          <div style="background: #F0E6D6; height: 720px; border-radius: 0 0 12px 12px; overflow: hidden; box-shadow: 0 30px 80px -20px rgba(42,33,24,0.3);">
+            <iframe src="index.html" style="width:100%; height:100%; border:0; display:block;"></iframe>
+          </div>
+        </div>`,
+    };
+
+    ctrls.forEach(b => b.addEventListener("click", () => {
+      ctrls.forEach(c => c.classList.remove("active"));
+      b.classList.add("active");
+      const view = b.dataset.view;
+      stage.className = "stage" + (view === "compare" ? " compare" : "");
+      stage.innerHTML = views[view];
+    }));
+  </script>
+</body>
+</html>
