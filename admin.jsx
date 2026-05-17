@@ -2,9 +2,10 @@
 
 const { useState, useEffect, useCallback } = React;
 
-const SUPABASE_URL = "https://bmxftmbjotzfpvbefcxl.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJteGZ0bWJqb3R6ZnB2YmVmY3hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NjUxMTcsImV4cCI6MjA5NDQ0MTExN30.7uEmQdduRdfio9aMYtlLF26FMRAaiwf_H3xyrdR70eU";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient(
+  "https://bmxftmbjotzfpvbefcxl.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJteGZ0bWJqb3R6ZnB2YmVmY3hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NjUxMTcsImV4cCI6MjA5NDQ0MTExN30.7uEmQdduRdfio9aMYtlLF26FMRAaiwf_H3xyrdR70eU"
+);
 
 const fmt = (n) => "$" + Number(n).toLocaleString("es-AR");
 
@@ -114,13 +115,28 @@ const CATS = ["tops", "vestidos", "faldas", "pantalones", "abrigos", "conjuntos"
 const EMPTY_PROD = { name: "", category: "tops", color: "", cost_price: "", sale_price: "", tag: "", photo_url: "", description: "" };
 
 function Productos({ products, stock, onRefresh, showToast }) {
-  const [editing, setEditing]   = useState(null);
-  const [form, setForm]         = useState(EMPTY_PROD);
-  const [showForm, setShowForm] = useState(false);
-  const [confirm, setConfirm]   = useState(null);
+  const [editing, setEditing]     = useState(null);
+  const [form, setForm]           = useState(EMPTY_PROD);
+  const [showForm, setShowForm]   = useState(false);
+  const [confirm, setConfirm]     = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = React.useRef(null);
 
-  const openNew = () => { setForm(EMPTY_PROD); setEditing(null); setShowForm(true); };
+  const openNew  = () => { setForm(EMPTY_PROD); setEditing(null); setShowForm(true); };
   const openEdit = (p) => { setForm({ ...p, cost_price: String(p.cost_price), sale_price: String(p.sale_price) }); setEditing(p.id); setShowForm(true); };
+
+  const uploadPhoto = async (file) => {
+    if (!file) return;
+    setUploading(true);
+    const ext  = file.name.split(".").pop();
+    const path = `${Date.now()}.${ext}`;
+    const { error } = await sb.storage.from("product-photos").upload(path, file, { upsert: false });
+    if (error) { showToast("Error al subir la foto"); setUploading(false); return; }
+    const { data } = sb.storage.from("product-photos").getPublicUrl(path);
+    setForm(prev => ({ ...prev, photo_url: data.publicUrl }));
+    setUploading(false);
+    showToast("Foto subida ✦");
+  };
 
   const save = async () => {
     if (!form.name.trim()) return showToast("El nombre es obligatorio");
@@ -202,8 +218,34 @@ function Productos({ products, stock, onRefresh, showToast }) {
               </div>
             </div>
             <div className="adm-field">
-              <label>URL foto</label>
-              <input className="adm-input" value={form.photo_url} onChange={e => f("photo_url", e.target.value)} placeholder="https://..." />
+              <label>Foto del producto</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                {form.photo_url && (
+                  <img src={form.photo_url} alt="" style={{ width: 72, height: 72, objectFit: "cover", border: "1px solid var(--line)", flexShrink: 0 }} />
+                )}
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={e => uploadPhoto(e.target.files[0])}
+                  />
+                  <button
+                    type="button"
+                    className="adm-btn adm-btn--ghost"
+                    onClick={() => fileRef.current.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? "Subiendo..." : form.photo_url ? "Cambiar foto" : "Subir foto"}
+                  </button>
+                  {form.photo_url && (
+                    <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" style={{ color: "var(--ink-soft)" }} onClick={() => f("photo_url", "")}>
+                      Quitar foto
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="adm-field">
               <label>Descripción</label>
@@ -563,14 +605,64 @@ function StockValorizado({ products, stock, sales }) {
   );
 }
 
+// ── Login ──────────────────────────────────────────────────────
+function Login({ onLogin }) {
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    const { error: err } = await sb.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (err) setError("Email o contraseña incorrectos.");
+    else onLogin();
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--ink)" }}>
+      <form onSubmit={submit} style={{ background: "var(--whisper, #f8f4ee)", padding: 48, width: 360, display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 28, letterSpacing: "0.18em", textAlign: "center", marginBottom: 8 }}>DIONE</div>
+        <div style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", textAlign: "center", opacity: 0.5, marginTop: -12 }}>Panel de administración</div>
+
+        <div className="adm-field">
+          <label>Email</label>
+          <input className="adm-input" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@dione.com" autoComplete="email" />
+        </div>
+        <div className="adm-field">
+          <label>Contraseña</label>
+          <input className="adm-input" type="password" required value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" />
+        </div>
+
+        {error && <div style={{ color: "#c0392b", fontSize: 13, textAlign: "center" }}>{error}</div>}
+
+        <button className="adm-btn" type="submit" disabled={loading} style={{ marginTop: 4 }}>
+          {loading ? "Ingresando..." : "Ingresar"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 // ── App ────────────────────────────────────────────────────────
 function App() {
-  const [section, setSection] = useState("dashboard");
+  const [session, setSession]   = useState(undefined); // undefined = verificando
+  const [section, setSection]   = useState("dashboard");
   const [products, setProducts] = useState([]);
   const [stock, setStock]       = useState([]);
   const [sales, setSales]       = useState([]);
   const [toast, setToast]       = useState("");
   const [loading, setLoading]   = useState(true);
+
+  // Verificar sesión al montar y escuchar cambios
+  useEffect(() => {
+    sb.auth.getSession().then(({ data: { session } }) => setSession(session));
+    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => setSession(session));
+    return () => subscription.unsubscribe();
+  }, []);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
 
@@ -586,7 +678,18 @@ function App() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (session) load(); }, [session, load]);
+
+  const logout = async () => {
+    await sb.auth.signOut();
+    setProducts([]); setStock([]); setSales([]);
+  };
+
+  // Verificando sesión
+  if (session === undefined) return null;
+
+  // Sin sesión → login
+  if (!session) return <Login onLogin={() => {}} />;
 
   const nav = [
     { id: "dashboard",  label: "Dashboard",        icon: "▦" },
@@ -608,8 +711,13 @@ function App() {
             </div>
           ))}
         </nav>
-        <div style={{ padding: "16px 24px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-          <a href="index.html" style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", textDecoration: "none" }}>← Volver al sitio</a>
+        <div style={{ padding: "16px 24px", borderTop: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, letterSpacing: "0.12em" }}>{session.user.email}</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <a href="index.html" style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", textDecoration: "none" }}>← Sitio</a>
+            <span style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
+            <button onClick={logout} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", padding: 0 }}>Salir</button>
+          </div>
         </div>
       </aside>
 

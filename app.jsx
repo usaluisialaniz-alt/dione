@@ -1,5 +1,48 @@
 // DIONE — main app
 
+const sb = supabase.createClient(
+  "https://bmxftmbjotzfpvbefcxl.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJteGZ0bWJqb3R6ZnB2YmVmY3hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NjUxMTcsImV4cCI6MjA5NDQ0MTExN30.7uEmQdduRdfio9aMYtlLF26FMRAaiwf_H3xyrdR70eU"
+);
+
+// Placeholder swatches by category
+const SWATCH_MAP = { tops: "ph", vestidos: "ph--rose", faldas: "ph--dark", pantalones: "ph--deep", abrigos: "ph--dark", conjuntos: "ph--rose" };
+
+async function loadProductsFromSupabase() {
+  const [{ data: prods, error: prodErr }, { data: stockRows, error: stockErr }] = await Promise.all([
+    sb.from("dione_products").select("*").order("name"),
+    sb.from("dione_stock").select("*"),
+  ]);
+  console.log("[DIONE] prods:", prods, "prodErr:", prodErr);
+  console.log("[DIONE] stockRows:", stockRows, "stockErr:", stockErr);
+  if (prodErr) { console.error("[DIONE] dione_products error:", prodErr); return []; }
+  if (stockErr) console.warn("[DIONE] dione_stock error:", stockErr);
+  if (!prods) return [];
+  return prods.map(p => {
+    const sizes = (stockRows || [])
+      .filter(s => s.product_id === p.id && s.quantity > 0)
+      .map(s => s.size);
+    const swatch = SWATCH_MAP[p.category] || "ph";
+    const swatchAlt = swatch === "ph" ? "ph--rose" : "ph";
+    return {
+      id: p.id,
+      name: `${p.category.charAt(0).toUpperCase() + p.category.slice(1)} ${p.name}`,
+      cat: p.category,
+      price: Number(p.sale_price),
+      was: null,
+      tag: p.tag || null,
+      desc: p.description || "",
+      swatch,
+      swatchAlt,
+      color: p.color || "",
+      sizes: sizes.length ? sizes : ["U"],
+      img: p.photo_url || p.name,
+      img2: p.photo_url || p.name,
+      photo_url: p.photo_url || null,
+    };
+  });
+}
+
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "palette": ["#F0E6D6", "#A07346", "#2A2118"],
   "displayFont": "Cormorant Garamond",
@@ -45,6 +88,14 @@ function App() {
     root.style.setProperty("--display-weight", String(t.displayWeight));
     document.body.style.fontSize = t.bodySize + "px";
   }, [t.palette, t.displayFont, t.bodyFont, t.displayScale, t.bodySize, t.tracking, t.displayWeight]);
+
+  // Products from Supabase
+  const [dbProducts, setDbProducts] = useState(PRODUCTS);
+  useEffect(() => {
+    loadProductsFromSupabase()
+      .then(p => { if (p.length) setDbProducts(p); else console.warn("[DIONE] Supabase devolvió 0 productos"); })
+      .catch(err => console.error("[DIONE] Error cargando productos:", err));
+  }, []);
 
   // Cart state
   const [cart, setCart] = useState([]);
@@ -99,7 +150,7 @@ function App() {
       <main style={{ fontSize: t.bodySize + "px" }}>
         <Hero onShop={() => scrollTo("shop")} archHero={t.archHero} />
         <div className="meander" style={{ margin: "20px 0" }}></div>
-        <Catalog onQuickView={setQuick} onAdd={addToCart} scrollRef={shopRef} />
+        <Catalog products={dbProducts} onQuickView={setQuick} onAdd={addToCart} scrollRef={shopRef} />
         <Lookbook />
         <About />
         <Newsletter />
