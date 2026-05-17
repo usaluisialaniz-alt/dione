@@ -112,7 +112,7 @@ function Dashboard({ products, stock, sales }) {
 
 // ── Productos ──────────────────────────────────────────────────
 const CATS = ["tops", "vestidos", "faldas", "pantalones", "abrigos", "conjuntos", "accesorios"];
-const EMPTY_PROD = { name: "", category: "tops", color: "", cost_price: "", sale_price: "", tag: "", photo_url: "", description: "" };
+const EMPTY_PROD = { name: "", category: "tops", color: "", cost_price: "", markup: "", sale_price: "", tag: "", photo_url: "", description: "" };
 
 function Productos({ products, stock, onRefresh, showToast }) {
   const [editing, setEditing]     = useState(null);
@@ -122,8 +122,34 @@ function Productos({ products, stock, onRefresh, showToast }) {
   const [uploading, setUploading] = useState(false);
   const fileRef = React.useRef(null);
 
+  const calcMarkup = (cost, sale) => {
+    const c = Number(cost), s = Number(sale);
+    if (!c || !s) return "";
+    return String(Math.round((s - c) / c * 100));
+  };
+
   const openNew  = () => { setForm(EMPTY_PROD); setEditing(null); setShowForm(true); };
-  const openEdit = (p) => { setForm({ ...p, cost_price: String(p.cost_price), sale_price: String(p.sale_price) }); setEditing(p.id); setShowForm(true); };
+  const openEdit = (p) => {
+    const cost = String(p.cost_price), sale = String(p.sale_price);
+    setForm({ ...p, cost_price: cost, sale_price: sale, markup: calcMarkup(cost, sale) });
+    setEditing(p.id); setShowForm(true);
+  };
+
+  const setCost = (val) => {
+    const cost = val, markup = form.markup;
+    const sale = cost && markup ? String(Math.round(Number(cost) * (1 + Number(markup) / 100))) : form.sale_price;
+    setForm(prev => ({ ...prev, cost_price: cost, sale_price: sale }));
+  };
+
+  const setMarkup = (val) => {
+    const markup = val, cost = form.cost_price;
+    const sale = cost && markup ? String(Math.round(Number(cost) * (1 + Number(markup) / 100))) : form.sale_price;
+    setForm(prev => ({ ...prev, markup: val, sale_price: sale }));
+  };
+
+  const setSale = (val) => {
+    setForm(prev => ({ ...prev, sale_price: val, markup: calcMarkup(prev.cost_price, val) }));
+  };
 
   const uploadPhoto = async (file) => {
     if (!file) return;
@@ -210,11 +236,15 @@ function Productos({ products, stock, onRefresh, showToast }) {
             <div className="adm-form-row">
               <div className="adm-field">
                 <label>Precio costo ($)</label>
-                <input className="adm-input" type="number" value={form.cost_price} onChange={e => f("cost_price", e.target.value)} placeholder="8400" />
+                <input className="adm-input" type="number" min="0" value={form.cost_price} onChange={e => setCost(e.target.value)} placeholder="8400" />
               </div>
               <div className="adm-field">
-                <label>Precio venta ($)</label>
-                <input className="adm-input" type="number" value={form.sale_price} onChange={e => f("sale_price", e.target.value)} placeholder="16800" />
+                <label>Margen (%)</label>
+                <input className="adm-input" type="number" min="0" value={form.markup} onChange={e => setMarkup(e.target.value)} placeholder="100" />
+              </div>
+              <div className="adm-field">
+                <label>Precio venta ($) {form.cost_price && form.markup ? <span style={{ color: "var(--bronze)", fontWeight: 400, fontSize: 11 }}>— calculado</span> : ""}</label>
+                <input className="adm-input" type="number" min="0" value={form.sale_price} onChange={e => setSale(e.target.value)} placeholder="16800" />
               </div>
             </div>
             <div className="adm-field">
@@ -267,6 +297,7 @@ function Productos({ products, stock, onRefresh, showToast }) {
               <th>Color</th>
               <th>Categoría</th>
               <th>Costo</th>
+              <th>Margen</th>
               <th>Venta</th>
               <th>Stock total</th>
               <th>Tag</th>
@@ -282,6 +313,9 @@ function Productos({ products, stock, onRefresh, showToast }) {
                   <td>{p.color || "—"}</td>
                   <td style={{ textTransform: "capitalize" }}>{p.category}</td>
                   <td>{fmt(p.cost_price)}</td>
+                  <td style={{ color: "var(--bronze-deep)", fontWeight: 500 }}>
+                    {p.cost_price ? `${Math.round((p.sale_price - p.cost_price) / p.cost_price * 100)}%` : "—"}
+                  </td>
                   <td>{fmt(p.sale_price)}</td>
                   <td>
                     <span className={`badge ${units === 0 ? "badge--out" : units <= 2 ? "badge--low" : "badge--ok"}`}>{units}</span>
