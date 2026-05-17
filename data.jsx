@@ -41,9 +41,11 @@ function Placeholder({ tag = "IMAGEN", variant = "ph", className = "", style = {
 // Logo wordmark
 function Logo({ size = 22 }) {
   return (
-    <span className="display" style={{ fontSize: size, letterSpacing: "0.26em", fontWeight: 500 }}>
-      DIONE
-    </span>
+    <img
+      src="logo.png"
+      alt="DIONE"
+      style={{ height: size * 2.8, width: "auto", display: "block", objectFit: "contain" }}
+    />
   );
 }
 

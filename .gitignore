@@ -6,3 +6,7 @@ uploads/
 .env
 .env.local
 .env*.local
+config.js
+
+# Local Netlify folder
+.netlify

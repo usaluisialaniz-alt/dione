@@ -112,7 +112,7 @@ function Dashboard({ products, stock, sales }) {
 
 // ── Productos ──────────────────────────────────────────────────
 const CATS = ["tops", "vestidos", "faldas", "pantalones", "abrigos", "conjuntos", "accesorios"];
-const EMPTY_PROD = { name: "", category: "tops", color: "", cost_price: "", markup: "", sale_price: "", tag: "", photo_url: "", description: "" };
+const EMPTY_PROD = { name: "", category: "tops", color: "", cost_price: "", markup: "", sale_price: "", tag: "", photos: [], description: "" };
 
 function Productos({ products, stock, onRefresh, showToast }) {
   const [editing, setEditing]     = useState(null);
@@ -131,7 +131,8 @@ function Productos({ products, stock, onRefresh, showToast }) {
   const openNew  = () => { setForm(EMPTY_PROD); setEditing(null); setShowForm(true); };
   const openEdit = (p) => {
     const cost = String(p.cost_price), sale = String(p.sale_price);
-    setForm({ ...p, cost_price: cost, sale_price: sale, markup: calcMarkup(cost, sale) });
+    const photos = p.photos?.length ? p.photos : (p.photo_url ? [p.photo_url] : []);
+    setForm({ ...p, cost_price: cost, sale_price: sale, markup: calcMarkup(cost, sale), photos });
     setEditing(p.id); setShowForm(true);
   };
 
@@ -159,13 +160,18 @@ function Productos({ products, stock, onRefresh, showToast }) {
     const { error } = await sb.storage.from("product-photos").upload(path, file, { upsert: false });
     if (error) { showToast("Error al subir la foto"); setUploading(false); return; }
     const { data } = sb.storage.from("product-photos").getPublicUrl(path);
-    setForm(prev => ({ ...prev, photo_url: data.publicUrl }));
+    setForm(prev => ({ ...prev, photos: [...(prev.photos || []), data.publicUrl] }));
     setUploading(false);
     showToast("Foto subida ✦");
   };
 
+  const removePhoto = (idx) => {
+    setForm(prev => ({ ...prev, photos: prev.photos.filter((_, i) => i !== idx) }));
+  };
+
   const save = async () => {
     if (!form.name.trim()) return showToast("El nombre es obligatorio");
+    const photos = form.photos || [];
     const payload = {
       name: form.name.trim(),
       category: form.category,
@@ -173,7 +179,8 @@ function Productos({ products, stock, onRefresh, showToast }) {
       cost_price: Number(form.cost_price) || 0,
       sale_price: Number(form.sale_price) || 0,
       tag: form.tag || null,
-      photo_url: form.photo_url || null,
+      photo_url: photos[0] || null,
+      photos,
       description: form.description || null,
     };
     if (editing) {
@@ -248,33 +255,20 @@ function Productos({ products, stock, onRefresh, showToast }) {
               </div>
             </div>
             <div className="adm-field">
-              <label>Foto del producto</label>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                {form.photo_url && (
-                  <img src={form.photo_url} alt="" style={{ width: 72, height: 72, objectFit: "cover", border: "1px solid var(--line)", flexShrink: 0 }} />
-                )}
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    onChange={e => uploadPhoto(e.target.files[0])}
-                  />
-                  <button
-                    type="button"
-                    className="adm-btn adm-btn--ghost"
-                    onClick={() => fileRef.current.click()}
-                    disabled={uploading}
-                  >
-                    {uploading ? "Subiendo..." : form.photo_url ? "Cambiar foto" : "Subir foto"}
-                  </button>
-                  {form.photo_url && (
-                    <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" style={{ color: "var(--ink-soft)" }} onClick={() => f("photo_url", "")}>
-                      Quitar foto
-                    </button>
-                  )}
-                </div>
+              <label>Fotos del producto {form.photos?.length > 0 && <span style={{ color: "var(--bronze)", fontWeight: 400 }}>({form.photos.length}) — la primera es la principal</span>}</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-start" }}>
+                {(form.photos || []).map((url, idx) => (
+                  <div key={idx} style={{ position: "relative", flexShrink: 0 }}>
+                    <img src={url} alt="" style={{ width: 80, height: 80, objectFit: "cover", border: idx === 0 ? "2px solid var(--bronze)" : "1px solid var(--line)", display: "block" }} />
+                    {idx === 0 && <span style={{ position: "absolute", top: 2, left: 2, background: "var(--bronze)", color: "var(--whisper)", fontSize: 8, padding: "1px 4px", letterSpacing: "0.1em" }}>PRINCIPAL</span>}
+                    <button type="button" onClick={() => removePhoto(idx)} style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, background: "var(--ink)", color: "var(--whisper)", border: 0, cursor: "pointer", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                  </div>
+                ))}
+                <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => uploadPhoto(e.target.files[0])} />
+                <button type="button" className="adm-btn adm-btn--ghost" onClick={() => fileRef.current.click()} disabled={uploading}
+                  style={{ width: 80, height: 80, flexDirection: "column", gap: 4, fontSize: 10 }}>
+                  {uploading ? "..." : <><span style={{ fontSize: 20 }}>+</span><span>Foto</span></>}
+                </button>
               </div>
             </div>
             <div className="adm-field">
@@ -658,7 +652,7 @@ function Login({ onLogin }) {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--ink)" }}>
-      <form onSubmit={submit} style={{ background: "var(--whisper, #f8f4ee)", padding: 48, width: 360, display: "flex", flexDirection: "column", gap: 20 }}>
+      <form onSubmit={submit} style={{ background: "var(--whisper, #f8f4ee)", padding: "36px 28px", width: "min(360px, 92vw)", display: "flex", flexDirection: "column", gap: 20 }}>
         <div style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 28, letterSpacing: "0.18em", textAlign: "center", marginBottom: 8 }}>DIONE</div>
         <div style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", textAlign: "center", opacity: 0.5, marginTop: -12 }}>Panel de administración</div>
 

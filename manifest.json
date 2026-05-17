@@ -1,0 +1,14 @@
+{
+  "name": "DIONE — Atelier de diseño femenino",
+  "short_name": "DIONE",
+  "description": "Ropa casual femenina hecha con amor. San Juan, Argentina.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F0E6D6",
+  "theme_color": "#2A2118",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

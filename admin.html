@@ -2,8 +2,17 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>DIONE · Admin</title>
+  <meta name="theme-color" content="#2A2118" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="DIONE Admin" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="manifest" href="manifest-admin.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
@@ -135,16 +144,61 @@
     .adm-tab { padding: 10px 20px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; border-bottom: 2px solid transparent; color: var(--ink-soft); transition: color .2s; }
     .adm-tab.active { color: var(--ink); border-bottom-color: var(--bronze); }
 
+    /* Tables scroll on mobile */
+    .adm-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
     /* Responsive */
     @media (max-width: 700px) {
       .adm { flex-direction: column; }
-      .adm-side { width: 100%; height: auto; position: static; }
-      .adm-nav { display: flex; flex-direction: row; overflow-x: auto; padding: 0; }
-      .adm-nav-item { white-space: nowrap; border-left: none; border-bottom: 2px solid transparent; }
+
+      /* Sidebar becomes top bar */
+      .adm-side { width: 100%; height: auto; position: sticky; top: 0; z-index: 40; flex-shrink: 0; }
+      .adm-logo { padding: 14px 16px 12px; font-size: 18px; }
+      .adm-logo span { display: none; }
+      .adm-nav {
+        display: flex; flex-direction: row;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+        padding: 0; scrollbar-width: none;
+      }
+      .adm-nav::-webkit-scrollbar { display: none; }
+      .adm-nav-item {
+        white-space: nowrap; flex-shrink: 0;
+        border-left: none; border-bottom: 2px solid transparent;
+        padding: 10px 16px; font-size: 10px;
+      }
       .adm-nav-item.active { border-left-color: transparent; border-bottom-color: var(--bronze); }
-      .adm-content { padding: 20px; }
+
+      /* Bottom user bar */
+      .adm-side > div:last-child { padding: 10px 16px; flex-direction: row; align-items: center; justify-content: center; gap: 12px; }
+
+      /* Main content */
+      .adm-topbar { padding: 12px 16px; }
+      .adm-content { padding: 16px; }
+
+      /* Typography */
+      .adm-page-title { font-size: 28px; }
+
+      /* Forms */
       .adm-form-row { grid-template-columns: 1fr; }
-      .adm-metrics { grid-template-columns: 1fr 1fr; }
+
+      /* Metrics: 2 columns */
+      .adm-metrics { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .adm-metric { padding: 14px 14px; }
+      .adm-metric__value { font-size: 20px; }
+
+      /* Section header stacks */
+      .adm-section-header { flex-wrap: wrap; gap: 10px; }
+      .adm-section-header .adm-btn { width: 100%; justify-content: center; }
+
+      /* Stock search input */
+      .adm-section-header .adm-input { width: 100% !important; }
+
+      /* Panel padding */
+      .adm-panel { padding: 18px; }
+    }
+
+    @media (max-width: 400px) {
+      .adm-metrics { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -156,5 +210,10 @@
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script type="text/babel" src="admin.jsx"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
 </body>
 </html>

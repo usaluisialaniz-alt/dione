@@ -6,7 +6,6 @@ const { useState, useEffect, useRef, useMemo } = React;
 // Announcement marquee
 function Announcement() {
   const items = [
-    "ENVÍO GRATIS desde $200.000",
     "★",
     "Pago en cuotas sin interés",
     "★",
@@ -40,11 +39,18 @@ function Announcement() {
 // Header
 function Header({ cartCount, onCartOpen, onNav, active }) {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    document.body.classList.toggle("locked", menuOpen);
+    return () => document.body.classList.remove("locked");
+  }, [menuOpen]);
 
   const nav = [
     { id: "shop",     label: "Tienda" },
@@ -53,57 +59,95 @@ function Header({ cartCount, onCartOpen, onNav, active }) {
     { id: "diario",   label: "Diario" },
   ];
 
+  const handleNav = (id) => { onNav(id); setMenuOpen(false); };
+
   return (
-    <header style={{
-      position: "sticky", top: 0, zIndex: 50,
-      background: scrolled ? "rgba(240,230,214,0.92)" : "var(--cream)",
-      backdropFilter: scrolled ? "blur(14px) saturate(140%)" : "none",
-      borderBottom: scrolled ? "1px solid var(--line)" : "1px solid transparent",
-      transition: "background .25s ease, border-color .25s ease",
-    }}>
-      <div className="shell dione-header-grid" style={{
-        display: "grid",
-        gridTemplateColumns: "1fr auto 1fr",
-        alignItems: "center",
-        height: 72,
+    <>
+      <header style={{
+        position: "sticky", top: 0, zIndex: 50,
+        background: scrolled ? "rgba(240,230,214,0.92)" : "var(--cream)",
+        backdropFilter: scrolled ? "blur(14px) saturate(140%)" : "none",
+        borderBottom: scrolled ? "1px solid var(--line)" : "1px solid transparent",
+        transition: "background .25s ease, border-color .25s ease",
       }}>
-        <nav className="dione-nav" style={{ display: "flex", gap: 30 }}>
-          {nav.map(n => (
-            <span
-              key={n.id}
-              className="link-u eyebrow"
-              onClick={() => onNav(n.id)}
-              style={{ color: active === n.id ? "var(--ink)" : "var(--ink-soft)", cursor: "pointer" }}
-            >
-              {n.label}
-            </span>
-          ))}
-        </nav>
+        <div className="shell dione-header-grid" style={{
+          display: "grid",
+          gridTemplateColumns: "1fr auto 1fr",
+          alignItems: "center",
+          height: 72,
+        }}>
+          <nav className="dione-nav" style={{ display: "flex", gap: 30 }}>
+            {nav.map(n => (
+              <span key={n.id} className="link-u eyebrow" onClick={() => handleNav(n.id)}
+                style={{ color: active === n.id ? "var(--ink)" : "var(--ink-soft)", cursor: "pointer" }}>
+                {n.label}
+              </span>
+            ))}
+          </nav>
 
-        <div style={{ justifySelf: "center" }} onClick={() => onNav("home")}>
-          <Logo size={26} />
-        </div>
-
-        <div className="dione-header-actions" style={{ display: "flex", gap: 22, justifyContent: "flex-end", alignItems: "center", color: "var(--ink)" }}>
-          <button aria-label="Buscar" className="hide-mobile" style={iconBtn}>{Icon.search()}</button>
-          <button aria-label="Cuenta" className="hide-mobile" style={iconBtn}>{Icon.user()}</button>
-          <button aria-label="Favoritos" className="hide-mobile" style={iconBtn}>{Icon.heart()}</button>
-          <button aria-label="Bolsa" style={{ ...iconBtn, position: "relative" }} onClick={onCartOpen}>
-            {Icon.bag()}
-            {cartCount > 0 && (
-              <span style={{
-                position: "absolute", top: -4, right: -6,
-                background: "var(--bronze)", color: "var(--whisper)",
-                fontSize: 9.5, letterSpacing: 0, fontFamily: "var(--body)",
-                width: 16, height: 16, borderRadius: "50%",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontWeight: 600,
-              }}>{cartCount}</span>
-            )}
+          {/* Hamburger — solo mobile */}
+          <button
+            className="dione-hamburger"
+            aria-label="Menú"
+            onClick={() => setMenuOpen(o => !o)}
+            style={{ ...iconBtn, display: "none" }}
+          >
+            {menuOpen ? Icon.close() : Icon.menu()}
           </button>
+
+          <div style={{ justifySelf: "center" }} onClick={() => handleNav("home")}>
+            <Logo size={26} />
+          </div>
+
+          <div className="dione-header-actions" style={{ display: "flex", gap: 22, justifyContent: "flex-end", alignItems: "center", color: "var(--ink)" }}>
+            <button aria-label="Buscar" className="hide-mobile" style={iconBtn}>{Icon.search()}</button>
+            <button aria-label="Cuenta" className="hide-mobile" style={iconBtn}>{Icon.user()}</button>
+            <button aria-label="Favoritos" className="hide-mobile" style={iconBtn}>{Icon.heart()}</button>
+            <button aria-label="Bolsa" style={{ ...iconBtn, position: "relative" }} onClick={onCartOpen}>
+              {Icon.bag()}
+              {cartCount > 0 && (
+                <span style={{
+                  position: "absolute", top: -4, right: -6,
+                  background: "var(--bronze)", color: "var(--whisper)",
+                  fontSize: 9.5, letterSpacing: 0, fontFamily: "var(--body)",
+                  width: 16, height: 16, borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontWeight: 600,
+                }}>{cartCount}</span>
+              )}
+            </button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Mobile menu overlay */}
+      {menuOpen && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 49,
+          background: "var(--cream)",
+          display: "flex", flexDirection: "column",
+          paddingTop: 72,
+        }}>
+          <nav style={{ display: "flex", flexDirection: "column", padding: "32px 28px", gap: 0 }}>
+            {nav.map(n => (
+              <span key={n.id} onClick={() => handleNav(n.id)} style={{
+                fontFamily: "var(--display)", fontSize: 48, lineHeight: 1.1,
+                color: active === n.id ? "var(--bronze-deep)" : "var(--ink)",
+                cursor: "pointer", padding: "10px 0",
+                borderBottom: "1px solid var(--line-soft)",
+              }}>
+                {n.label}
+              </span>
+            ))}
+          </nav>
+          <div style={{ padding: "24px 28px", marginTop: "auto", borderTop: "1px solid var(--line)" }}>
+            <button className="btn" style={{ width: "100%" }} onClick={() => { handleNav("shop"); }}>
+              Ver catálogo {Icon.arrow()}
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 const iconBtn = {
@@ -166,17 +210,19 @@ function Hero({ onShop }) {
             <span style={{ flex: "0 0 40px", height: 1, background: "var(--line)" }}></span>
             <span>32 piezas</span>
             <span style={{ flex: "0 0 40px", height: 1, background: "var(--line)" }}></span>
-            <span>Hecho en Bogotá</span>
+            <span>Hecho en San Juan</span>
           </div>
         </div>
 
         {/* Right — image stack */}
         <div className="fade-up d2 dione-hero-image" style={{ position: "relative", height: "78vh", minHeight: 560 }}>
-          <Placeholder
-            tag="EDITORIAL · DIOSA EN MÁRMOL"
-            variant="ph arch"
+          <img
+            src="hero-foto.jpg"
+            alt="DIONE · Editorial"
             style={{
               position: "absolute", inset: "0 0 0 12%",
+              width: "calc(100% - 12%)", height: "100%",
+              objectFit: "cover", objectPosition: "top center",
               borderTopLeftRadius: 999, borderTopRightRadius: 999,
             }}
           />
@@ -233,16 +279,16 @@ function SectionHead({ idx, eyebrow, title, sub }) {
 
 // ────────────────────────────────────────────────────────────
 // Catalog (filters + grid)
-function Catalog({ onQuickView, onAdd, scrollRef }) {
+function Catalog({ products: PRODS = PRODUCTS, onQuickView, onAdd, scrollRef }) {
   const [active, setActive] = useState("all");
   const [sort, setSort] = useState("featured");
 
   const filtered = useMemo(() => {
-    let list = active === "all" ? [...PRODUCTS] : PRODUCTS.filter(p => p.cat === active);
+    let list = active === "all" ? [...PRODS] : PRODS.filter(p => p.cat === active);
     if (sort === "low") list.sort((a, b) => a.price - b.price);
     else if (sort === "high") list.sort((a, b) => b.price - a.price);
     return list;
-  }, [active, sort]);
+  }, [active, sort, PRODS]);
 
   return (
     <section ref={scrollRef} style={{ padding: "64px 0 96px" }}>
@@ -259,7 +305,7 @@ function Catalog({ onQuickView, onAdd, scrollRef }) {
           display: "flex", justifyContent: "space-between", alignItems: "center",
           flexWrap: "wrap", gap: 16, marginBottom: 36,
         }}>
-          <div className="no-scrollbar" style={{ display: "flex", gap: 6, overflowX: "auto" }}>
+          <div className="no-scrollbar" style={{ display: "flex", gap: 6, overflowX: "auto", minWidth: 0, width: "100%" }}>
             {CATEGORIES.map(c => (
               <button
                 key={c.id}
@@ -340,24 +386,43 @@ function ProductCard({ product, index, onQuickView, onAdd }) {
         onClick={() => onQuickView(product)}
         style={{ position: "relative", aspectRatio: "3/4", overflow: "hidden" }}
       >
-        <Placeholder
-          tag={product.img}
-          variant={product.swatch}
-          style={{
-            position: "absolute", inset: 0,
-            opacity: hover ? 0 : 1,
-            transition: "opacity .55s ease",
-          }}
-        />
-        <Placeholder
-          tag={product.img2}
-          variant={product.swatchAlt}
-          style={{
-            position: "absolute", inset: 0,
-            opacity: hover ? 1 : 0,
-            transition: "opacity .55s ease",
-          }}
-        />
+        {(product.photos?.length || product.photo_url) ? (
+          <>
+            <img src={product.photos?.[0] || product.photo_url} alt={product.name} style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%",
+              objectFit: "cover", transition: "opacity .55s ease",
+              opacity: hover && product.photos?.[1] ? 0 : 1,
+            }} />
+            {product.photos?.[1] && (
+              <img src={product.photos[1]} alt={product.name} style={{
+                position: "absolute", inset: 0, width: "100%", height: "100%",
+                objectFit: "cover", transition: "opacity .55s ease",
+                opacity: hover ? 1 : 0,
+              }} />
+            )}
+          </>
+        ) : (
+          <>
+            <Placeholder
+              tag={product.img}
+              variant={product.swatch}
+              style={{
+                position: "absolute", inset: 0,
+                opacity: hover ? 0 : 1,
+                transition: "opacity .55s ease",
+              }}
+            />
+            <Placeholder
+              tag={product.img2}
+              variant={product.swatchAlt}
+              style={{
+                position: "absolute", inset: 0,
+                opacity: hover ? 1 : 0,
+                transition: "opacity .55s ease",
+              }}
+            />
+          </>
+        )}
 
         {/* Index */}
         <span style={{
@@ -378,8 +443,8 @@ function ProductCard({ product, index, onQuickView, onAdd }) {
           }}>{product.tag}</span>
         )}
 
-        {/* Hover overlay action */}
-        <div style={{
+        {/* Hover overlay action — visible always on touch, hover only on desktop */}
+        <div className="dione-card-actions" style={{
           position: "absolute", left: 12, right: 12, bottom: 12,
           display: "flex", gap: 8,
           transform: hover ? "translateY(0)" : "translateY(8px)",
@@ -389,7 +454,7 @@ function ProductCard({ product, index, onQuickView, onAdd }) {
           <button
             onClick={(e) => { e.stopPropagation(); onQuickView(product); }}
             style={{
-              flex: 1, height: 38, background: "var(--whisper)", border: 0,
+              flex: 1, height: 42, background: "var(--whisper)", border: 0,
               fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase",
               fontFamily: "var(--body)", fontWeight: 500, cursor: "pointer",
             }}
@@ -400,7 +465,7 @@ function ProductCard({ product, index, onQuickView, onAdd }) {
             onClick={(e) => { e.stopPropagation(); onAdd(product, product.sizes[1] || product.sizes[0]); }}
             aria-label="Agregar"
             style={{
-              width: 38, height: 38, background: "var(--ink)", color: "var(--whisper)", border: 0,
+              width: 42, height: 42, background: "var(--ink)", color: "var(--whisper)", border: 0,
               cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
             }}
           >
@@ -416,6 +481,12 @@ function ProductCard({ product, index, onQuickView, onAdd }) {
           <div style={{ fontSize: 11, color: "var(--ink-soft)", marginTop: 4, letterSpacing: "0.06em" }}>
             {product.color}
           </div>
+          {(() => {
+            const qty = Object.values(product.stock || {}).reduce((a, b) => a + b, 0);
+            if (qty === 0) return <div style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "#c0392b", marginTop: 4 }}>Sin stock</div>;
+            if (qty <= 2) return <div style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--bronze-deep)", marginTop: 4 }}>¡Último{qty > 1 ? "s" : ""}! {qty} disp.</div>;
+            return <div style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--ink-soft)", marginTop: 4 }}>{qty} disponibles</div>;
+          })()}
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontFamily: "var(--display)", fontSize: 18 }}>{formatCOP(product.price)}</div>
@@ -522,21 +593,21 @@ function About() {
         </div>
 
         <div className="dione-about-image" style={{ position: "relative", height: 580 }}>
-          <Placeholder tag="ATELIER · MANOS" variant="ph--dark"
-            style={{ position: "absolute", left: 0, top: 0, width: "65%", height: "70%" }} />
-          <Placeholder tag="TELA · LINO 03" variant="ph--rose"
-            style={{ position: "absolute", right: 0, bottom: 0, width: "60%", height: "55%", borderTopLeftRadius: 999, borderTopRightRadius: 999 }} />
+          <img src="about-atelier.jpg" alt="Atelier DIONE"
+            style={{ position: "absolute", left: 0, top: 0, width: "65%", height: "70%", objectFit: "cover" }} />
+          <img src="about-tela.jpg" alt="Tela DIONE"
+            style={{ position: "absolute", right: 0, bottom: 0, width: "60%", height: "55%", objectFit: "cover", objectPosition: "center", borderTopLeftRadius: 999, borderTopRightRadius: 999 }} />
           <div style={{
-            position: “absolute”, left: “50%”, top: “42%”,
-            transform: “translateX(-50%)”,
-            background: “var(--whisper)”,
-            padding: “14px 18px”,
-            border: “1px solid var(--line)”,
-            fontFamily: “var(--display)”, fontStyle: “italic”,
-            fontSize: 17, color: “var(--ink)”,
-            whiteSpace: “nowrap”,
+            position: "absolute", left: "50%", top: "42%",
+            transform: "translateX(-50%)",
+            background: "var(--whisper)",
+            padding: "14px 18px",
+            border: "1px solid var(--line)",
+            fontFamily: "var(--display)", fontStyle: "italic",
+            fontSize: 17, color: "var(--ink)",
+            whiteSpace: "nowrap",
           }}>
-            “Lo sencillo también puede ser extraordinario.”
+            "Lo sencillo también puede ser extraordinario."
           </div>
         </div>
       </div>
@@ -565,6 +636,7 @@ function Newsletter() {
         {!sent ? (
           <form
             onSubmit={(e) => { e.preventDefault(); if (email) setSent(true); }}
+            className="dione-newsletter-form"
             style={{
               display: "flex", maxWidth: 480, margin: "0 auto",
               border: "1px solid var(--ink)", background: "var(--whisper)",
@@ -580,10 +652,10 @@ function Newsletter() {
                 flex: 1, height: 50, padding: "0 18px",
                 background: "transparent", border: 0, outline: "none",
                 fontFamily: "var(--body)", fontSize: 14, color: "var(--ink)",
-                letterSpacing: "0.02em",
+                letterSpacing: "0.02em", minWidth: 0,
               }}
             />
-            <button type="submit" className="btn" style={{ height: 50 }}>Suscribirme</button>
+            <button type="submit" className="btn" style={{ height: 50, flexShrink: 0 }}>Suscribirme</button>
           </form>
         ) : (
           <div className="display-it" style={{ fontSize: 22, color: "var(--bronze-deep)" }}>
@@ -615,10 +687,10 @@ function Footer() {
           borderBottom: "1px solid rgba(250,246,238,0.15)",
         }}>
           <div>
-            <div className="display" style={{ fontSize: 36, letterSpacing: "0.24em", marginBottom: 24 }}>DIONE</div>
+            <img src="logo.png" alt="DIONE" style={{ height: 80, width: "auto", marginBottom: 18, filter: "brightness(0) invert(1)", opacity: 0.9 }} />
             <p style={{ color: "rgba(250,246,238,0.65)", fontSize: 14, lineHeight: 1.7, maxWidth: 320 }}>
               Ropa casual femenina hecha con amor.
-              <br /><span className="display-it">Bogotá, Colombia.</span>
+              <br /><span className="display-it">San Juan, Argentina.</span>
             </p>
             <div style={{ display: "flex", gap: 14, marginTop: 24, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase" }}>
               <span className="link-u">Instagram</span>
@@ -648,9 +720,9 @@ function Footer() {
           paddingTop: 24, fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase",
           color: "rgba(250,246,238,0.55)", flexWrap: "wrap", gap: 14,
         }}>
-          <span>© MMXXVI DIONE · Bogotá, Colombia</span>
-          <span className=”display-it” style={{ letterSpacing: 0, textTransform: “none”, fontSize: 14 }}>
-            “Vístete para ti, y para nadie más.”
+          <span>© MMXXVI DIONE · San Juan, Argentina</span>
+          <span className="display-it" style={{ letterSpacing: 0, textTransform: "none", fontSize: 14 }}>
+            "Vístete para ti, y para nadie más."
           </span>
           <span>Términos · Privacidad · Cookies</span>
         </div>

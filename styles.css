@@ -49,69 +49,76 @@ img { display: block; max-width: 100%; }
 h1.display, h2.display, h3.display, h4.display { zoom: var(--display-scale, 1); }
 
 /* Page container */
-.shell { max-width: 1440px; margin: 0 auto; padding: 0 48px; }
+.shell { max-width: 1440px; margin: 0 auto; padding: 0 48px; overflow: hidden; }
 @media (max-width: 960px) { .shell { padding: 0 28px; } }
 @media (max-width: 560px) { .shell { padding: 0 18px; } }
 
 /* ───────── Responsive · Mobile ───────── */
 @media (max-width: 860px) {
-  /* Header: collapse to logo + bag */
+  /* Header */
   .dione-nav { display: none !important; }
+  .dione-hamburger { display: inline-flex !important; }
   .dione-header-grid {
     grid-template-columns: auto 1fr auto !important;
     height: 60px !important;
   }
-  .dione-header-actions { gap: 12px !important; }
+  .dione-header-actions { gap: 10px !important; }
   .dione-header-actions .hide-mobile { display: none !important; }
+  /* Logo no más alto que el header */
+  .dione-header-grid img { height: 38px !important; }
 
   /* Hero: single column, stacked */
   .dione-hero-grid {
     grid-template-columns: 1fr !important;
-    gap: 28px !important;
+    gap: 0 !important;
     min-height: auto !important;
     align-items: start !important;
   }
   .dione-hero-image {
-    height: 70vh !important;
-    min-height: 420px !important;
-    order: 2;
+    height: 56vw !important;
+    min-height: 280px !important;
+    max-height: 420px !important;
+    order: -1;
+    margin: 0 -18px;
   }
   .dione-hero-text {
     order: 1;
     padding-bottom: 0 !important;
+    padding-top: 24px !important;
   }
-  .dione-hero-caption {
-    flex-wrap: wrap;
-    gap: 10px !important;
-  }
-  .dione-hero-caption > span:nth-child(even) {
-    display: none;
-  }
-  .dione-floating-card {
-    width: 150px !important;
-    left: 12px !important;
-    bottom: 24px !important;
-  }
+  .dione-hero-caption { display: none !important; }
+  .dione-floating-card { display: none !important; }
   .dione-vertical-tag { display: none !important; }
 
-  /* Section heads stack */
+  /* Hero buttons stack on very small */
+  .dione-hero-text .btn + .btn { margin-top: 0; }
+
+  /* Section heads */
   .dione-section-head {
     grid-template-columns: 1fr !important;
-    gap: 14px !important;
+    gap: 10px !important;
+    padding-bottom: 24px !important;
   }
   .dione-section-head > div:nth-child(2),
   .dione-section-head > div:nth-child(3) { display: none; }
 
-  /* Filters wrap better */
+  /* Filters */
   .dione-filter-bar {
     flex-direction: column !important;
     align-items: stretch !important;
+    gap: 12px !important;
   }
 
-  /* Product grid */
+  /* Product grid: 2 columnas */
   .dione-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 28px 12px !important;
+    gap: 32px 10px !important;
+  }
+
+  /* Product card actions: siempre visible en touch */
+  .dione-card-actions {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
   }
 
   /* Lookbook stacks */
@@ -121,7 +128,7 @@ h1.display, h2.display, h3.display, h4.display { zoom: var(--display-scale, 1); 
   }
   .dione-lookbook-grid > * {
     grid-row: auto !important;
-    height: 280px;
+    height: 260px !important;
   }
   .dione-lookbook-card {
     height: auto !important;
@@ -131,16 +138,34 @@ h1.display, h2.display, h3.display, h4.display { zoom: var(--display-scale, 1); 
   /* About: single column */
   .dione-about-grid {
     grid-template-columns: 1fr !important;
-    gap: 40px !important;
+    gap: 32px !important;
   }
   .dione-about-image {
-    height: 480px !important;
+    height: 360px !important;
+  }
+
+  /* Newsletter form: stack */
+  .dione-newsletter-form {
+    flex-direction: column !important;
+    border: none !important;
+    background: transparent !important;
+    gap: 10px !important;
+  }
+  .dione-newsletter-form input {
+    border: 1px solid var(--ink) !important;
+    width: 100% !important;
+    height: 50px !important;
+    background: var(--whisper) !important;
+  }
+  .dione-newsletter-form .btn {
+    width: 100% !important;
+    justify-content: center;
   }
 
   /* Footer */
   .dione-footer-grid {
     grid-template-columns: 1fr 1fr !important;
-    gap: 36px !important;
+    gap: 32px !important;
   }
   .dione-footer-bottom {
     flex-direction: column;
@@ -149,21 +174,33 @@ h1.display, h2.display, h3.display, h4.display { zoom: var(--display-scale, 1); 
     text-align: left;
   }
 
-  /* Quick view modal: stack image + detail */
+  /* Modal quick view */
   .modal__card {
     grid-template-columns: 1fr !important;
+    max-height: 95vh !important;
+    overflow-y: auto !important;
   }
+  .modal { padding: 0 !important; align-items: flex-end !important; }
 
-  /* Drawer narrower margin */
+  /* Cart drawer */
   .drawer { width: 100vw !important; }
 }
 
 @media (max-width: 480px) {
   .dione-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 24px 8px !important;
   }
   .dione-footer-grid {
     grid-template-columns: 1fr !important;
+  }
+  /* Hero buttons stack */
+  .dione-hero-text > div[style*="flex"] {
+    flex-direction: column !important;
+  }
+  .dione-hero-text .btn {
+    width: 100% !important;
+    justify-content: center !important;
   }
 }
 
@@ -337,3 +374,30 @@ h1.display, h2.display, h3.display, h4.display { zoom: var(--display-scale, 1); 
 
 /* Body lock */
 body.locked { overflow: hidden; }
+
+/* Safe area insets (iPhone notch / home indicator) */
+.dione-header-grid {
+  padding-left: max(48px, env(safe-area-inset-left));
+  padding-right: max(48px, env(safe-area-inset-right));
+}
+@media (max-width: 960px) {
+  .dione-header-grid {
+    padding-left: max(28px, env(safe-area-inset-left));
+    padding-right: max(28px, env(safe-area-inset-right));
+  }
+}
+@media (max-width: 560px) {
+  .dione-header-grid {
+    padding-left: max(18px, env(safe-area-inset-left));
+    padding-right: max(18px, env(safe-area-inset-right));
+  }
+}
+.dione-mobile-menu {
+  padding-top: max(24px, env(safe-area-inset-top));
+  padding-bottom: max(32px, env(safe-area-inset-bottom));
+  padding-left: max(32px, env(safe-area-inset-left));
+  padding-right: max(32px, env(safe-area-inset-right));
+}
+.drawer {
+  padding-bottom: max(0px, env(safe-area-inset-bottom));
+}

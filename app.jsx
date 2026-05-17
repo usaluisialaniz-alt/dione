@@ -18,7 +18,10 @@ async function loadProductsFromSupabase() {
   if (prodErr) { console.error("[DIONE] dione_products error:", prodErr); return []; }
   if (stockErr) console.warn("[DIONE] dione_stock error:", stockErr);
   if (!prods) return [];
-  return prods.map(p => {
+  return prods.filter(p => {
+    const total = (stockRows || []).filter(s => s.product_id === p.id).reduce((n, s) => n + s.quantity, 0);
+    return total > 0;
+  }).map(p => {
     const sizes = (stockRows || [])
       .filter(s => s.product_id === p.id && s.quantity > 0)
       .map(s => s.size);
@@ -39,6 +42,8 @@ async function loadProductsFromSupabase() {
       img: p.photo_url || p.name,
       img2: p.photo_url || p.name,
       photo_url: p.photo_url || null,
+      photos: p.photos?.length ? p.photos : (p.photo_url ? [p.photo_url] : []),
+      stock: Object.fromEntries((stockRows || []).filter(s => s.product_id === p.id).map(s => [s.size, s.quantity])),
     };
   });
 }
@@ -106,19 +111,33 @@ function App() {
   const shopRef = useRef(null);
 
   const addToCart = (product, size, qty = 1) => {
+    const available = product.stock?.[size] ?? 0;
     setCart(prev => {
       const idx = prev.findIndex(it => it.product.id === product.id && it.size === size);
+      const currentQty = idx >= 0 ? prev[idx].qty : 0;
+      const newQty = Math.min(currentQty + qty, available);
+      if (newQty <= currentQty) {
+        setToast("No hay más stock disponible");
+        setTimeout(() => setToast(""), 2200);
+        return prev;
+      }
       if (idx >= 0) {
         const next = [...prev];
-        next[idx] = { ...next[idx], qty: next[idx].qty + qty };
+        next[idx] = { ...next[idx], qty: newQty };
         return next;
       }
-      return [...prev, { product, size, qty }];
+      return [...prev, { product, size, qty: newQty }];
     });
-    setToast(`${product.name.replace(/^[^ ]+ /, "")} agregado`);
-    setTimeout(() => setToast(""), 2200);
+    if ((product.stock?.[size] ?? 0) > 0) {
+      setToast(`${product.name.replace(/^[^ ]+ /, "")} agregado`);
+      setTimeout(() => setToast(""), 2200);
+    }
   };
-  const changeQty = (i, qty) => setCart(prev => prev.map((it, idx) => idx === i ? { ...it, qty } : it));
+  const changeQty = (i, qty) => setCart(prev => prev.map((it, idx) => {
+    if (idx !== i) return it;
+    const available = it.product.stock?.[it.size] ?? 0;
+    return { ...it, qty: Math.min(Math.max(1, qty), available) };
+  }));
   const removeItem = (i) => setCart(prev => prev.filter((_, idx) => idx !== i));
   const cartCount = cart.reduce((n, it) => n + it.qty, 0);
 
@@ -151,9 +170,9 @@ function App() {
         <Hero onShop={() => scrollTo("shop")} archHero={t.archHero} />
         <div className="meander" style={{ margin: "20px 0" }}></div>
         <Catalog products={dbProducts} onQuickView={setQuick} onAdd={addToCart} scrollRef={shopRef} />
-        <Lookbook />
+        {/* <Lookbook /> */}
         <About />
-        <Newsletter />
+        {/* <Newsletter /> */}
       </main>
       <Footer />
 

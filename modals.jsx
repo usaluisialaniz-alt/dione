@@ -20,10 +20,7 @@ function QuickView({ product, onClose, onAdd }) {
 
   if (!product) return null;
 
-  const variants = [
-    { tag: product.img,  v: product.swatch },
-    { tag: product.img2, v: product.swatchAlt },
-  ];
+  const photos = product.photos?.length ? product.photos : (product.photo_url ? [product.photo_url] : []);
 
   return (
     <React.Fragment>
@@ -32,34 +29,25 @@ function QuickView({ product, onClose, onAdd }) {
         <div className="modal__card">
           {/* Image side */}
           <div style={{ position: "relative", background: "var(--bone)", minHeight: 480 }}>
-            <Placeholder
-              tag={variants[imgIdx].tag}
-              variant={variants[imgIdx].v}
-              style={{ position: "absolute", inset: 0 }}
-            />
-            <div style={{
-              position: "absolute", left: 16, bottom: 16,
-              display: "flex", gap: 8,
-            }}>
-              {variants.map((vv, i) => (
-                <button
-                  key={i}
-                  onClick={() => setImgIdx(i)}
-                  style={{
+            {photos.length > 0 ? (
+              <img src={photos[imgIdx] || photos[0]} alt={product.name}
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <Placeholder tag={product.img} variant={product.swatch} style={{ position: "absolute", inset: 0 }} />
+            )}
+            {photos.length > 1 && (
+              <div style={{ position: "absolute", left: 12, bottom: 12, display: "flex", gap: 6 }}>
+                {photos.map((url, i) => (
+                  <button key={i} onClick={() => setImgIdx(i)} style={{
                     width: 52, height: 64, padding: 0, border: 0, cursor: "pointer",
-                    outline: imgIdx === i ? "1.5px solid var(--ink)" : "1.5px solid transparent",
-                    outlineOffset: 2,
-                  }}
-                >
-                  <Placeholder tag="" variant={vv.v} style={{ width: "100%", height: "100%" }} />
-                </button>
-              ))}
-            </div>
-            <span style={{
-              position: "absolute", top: 16, left: 16,
-              fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.1em",
-              background: "rgba(250,246,238,0.85)", padding: "4px 8px",
-            }}>{product.id.toUpperCase()}</span>
+                    outline: imgIdx === i ? "2px solid var(--ink)" : "2px solid transparent",
+                    outlineOffset: 2, flexShrink: 0,
+                  }}>
+                    <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Detail side */}
@@ -87,9 +75,6 @@ function QuickView({ product, onClose, onAdd }) {
                   {formatCOP(product.was)}
                 </span>
               )}
-              <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--ink-soft)" }}>
-                o 4 × {formatCOP(Math.round(product.price / 4))}
-              </span>
             </div>
 
             <p style={{ marginTop: 22, color: "var(--ink-soft)", lineHeight: 1.7, fontSize: 14.5 }}>
@@ -144,10 +129,6 @@ function QuickView({ product, onClose, onAdd }) {
               </button>
             </div>
 
-            <div style={{ display: "flex", gap: 18, marginTop: 18, fontSize: 11.5, color: "var(--ink-soft)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-              <span>✦ Envío en 24-48h</span>
-              <span>✦ 30 días devolución</span>
-            </div>
           </div>
         </div>
       </div>
@@ -171,8 +152,15 @@ function CartDrawer({ open, items, onClose, onChange, onRemove }) {
   }, [open, onClose]);
 
   const subtotal = items.reduce((s, it) => s + it.product.price * it.qty, 0);
-  const shipping = subtotal >= 200000 ? 0 : 15000;
-  const total = subtotal + shipping;
+  const total = subtotal;
+
+  const sendWhatsApp = () => {
+    const lines = items.map(it =>
+      `• ${it.product.name.replace(/^[^ ]+ /, "")}${it.product.color ? " (" + it.product.color + ")" : ""} -x${it.qty} unidades— ${formatCOP(it.product.price * it.qty)}`
+    ).join("\n");
+    const msg = `Hola! Quiero hacer un pedido en DIONE🛍️\n\n${lines}\n\n*Total: ${formatCOP(total)}*`;
+    window.open(`https://wa.me/5492644116585?text=${encodeURIComponent(msg)}`, "_blank");
+  };
   const free = Math.max(0, 200000 - subtotal);
 
   return (
@@ -193,25 +181,6 @@ function CartDrawer({ open, items, onClose, onChange, onRemove }) {
             </button>
           </div>
 
-          {items.length > 0 && (
-            <div style={{ marginTop: 16 }}>
-              {free > 0 ? (
-                <div style={{ fontSize: 12, color: "var(--ink-soft)" }}>
-                  Te faltan <strong style={{ color: "var(--bronze-deep)" }}>{formatCOP(free)}</strong> para envío gratis.
-                </div>
-              ) : (
-                <div style={{ fontSize: 12, color: "var(--bronze-deep)", fontWeight: 500 }}>
-                  ✦ Tienes envío gratis.
-                </div>
-              )}
-              <div style={{ height: 3, background: "var(--bone)", marginTop: 8, position: "relative", overflow: "hidden" }}>
-                <div style={{
-                  height: "100%", width: `${Math.min(100, (subtotal / 200000) * 100)}%`,
-                  background: "var(--bronze)", transition: "width .35s ease",
-                }}></div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Items */}
@@ -228,7 +197,12 @@ function CartDrawer({ open, items, onClose, onChange, onRemove }) {
                 display: "grid", gridTemplateColumns: "84px 1fr",
                 gap: 16, padding: "18px 0", borderBottom: "1px solid var(--line-soft)",
               }}>
-                <Placeholder tag="" variant={it.product.swatch} style={{ aspectRatio: "3/4" }} />
+                {it.product.photo_url ? (
+                  <img src={it.product.photo_url} alt={it.product.name}
+                    style={{ aspectRatio: "3/4", width: "100%", objectFit: "cover", display: "block" }} />
+                ) : (
+                  <Placeholder tag="" variant={it.product.swatch} style={{ aspectRatio: "3/4" }} />
+                )}
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                     <div>
@@ -246,7 +220,7 @@ function CartDrawer({ open, items, onClose, onChange, onRemove }) {
                     <div style={{ display: "flex", alignItems: "center", border: "1px solid var(--line)" }}>
                       <button onClick={() => onChange(i, Math.max(1, it.qty - 1))} style={{ ...qtyBtn, width: 28, height: 30 }}>{Icon.minus()}</button>
                       <span style={{ minWidth: 24, textAlign: "center", fontFamily: "var(--display)", fontSize: 14 }}>{it.qty}</span>
-                      <button onClick={() => onChange(i, it.qty + 1)} style={{ ...qtyBtn, width: 28, height: 30 }}>{Icon.plus()}</button>
+                      <button onClick={() => onChange(i, it.qty + 1)} disabled={it.qty >= (it.product.stock?.[it.size] ?? 0)} style={{ ...qtyBtn, width: 28, height: 30, opacity: it.qty >= (it.product.stock?.[it.size] ?? 0) ? 0.3 : 1 }}>{Icon.plus()}</button>
                     </div>
                     <button
                       onClick={() => onRemove(i)}
@@ -262,20 +236,14 @@ function CartDrawer({ open, items, onClose, onChange, onRemove }) {
 
         {/* Footer / checkout */}
         {items.length > 0 && (
-          <div style={{ padding: 28, borderTop: "1px solid var(--line)", background: "var(--cream)" }}>
-            <Row label="Subtotal" v={formatCOP(subtotal)} />
-            <Row label="Envío" v={shipping === 0 ? "Gratis" : formatCOP(shipping)} />
-            <div style={{ height: 1, background: "var(--line)", margin: "12px 0" }}></div>
+          <div style={{ padding: 28, paddingBottom: "max(28px, calc(28px + env(safe-area-inset-bottom)))", borderTop: "1px solid var(--line)", background: "var(--cream)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <span className="eyebrow">Total</span>
               <span className="display" style={{ fontSize: 26, color: "var(--bronze-deep)" }}>{formatCOP(total)}</span>
             </div>
-            <button className="btn" style={{ width: "100%", marginTop: 18, height: 52 }}>
-              Pagar ahora {Icon.arrow()}
+            <button className="btn" style={{ width: "100%", marginTop: 18, height: 52 }} onClick={sendWhatsApp}>
+              Pedir por WhatsApp {Icon.arrow()}
             </button>
-            <div style={{ marginTop: 12, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", textAlign: "center", color: "var(--ink-soft)" }}>
-              Hasta 6 cuotas sin interés
-            </div>
           </div>
         )}
       </aside>
